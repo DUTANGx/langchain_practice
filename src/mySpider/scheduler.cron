@@ -1,0 +1,3 @@
+25 07 * * * cd /data/scraper_v0/mySpider && nohup scrapy crawl cryptohistoryday -a days=2 > logs/cryptohistoryday.log 2>&1 &
+35 07 * * * cd /data/scraper_v0/mySpider && nohup scrapy crawl cryptohistoryhour -a days=2 > logs/cryptohistoryhour.log 2>&1 &
+45 07 * * * cd /data/scraper_v0/mySpider && nohup scrapy crawl cryptohistory5min > logs/cryptohistory5min.log 2>&1 &
