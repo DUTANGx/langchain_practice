@@ -24,8 +24,6 @@ Relevant LangChain documentation:
 4. See the client notebook it has an example of how to use stream_events client-side!
 """  # noqa: E501
 import os
-import requests
-import json
 from typing import Any, List, Union
 from typing_extensions import Annotated
 
@@ -41,16 +39,14 @@ from langchain_core.tools import Tool
 from langchain_core.utils.function_calling import format_tool_to_openai_tool
 from langchain_openai import ChatOpenAI
 
-from langchain_community.utilities import GoogleSerperAPIWrapper
-
 from langserve import add_routes
 from langserve.pydantic_v1 import BaseModel, Field
+
+from functions import search, current_price, sentiment_indicator
 
 # 设置环境变量
 os.environ["LANGCHAIN_TRACING_V2"] = "true"
 os.environ["LANGCHAIN_API_KEY"] = "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"
-os.environ["TAVILY_API_KEY"] = "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"
-os.environ["SERPER_API_KEY"] = "575447666cc1aeeb781162501a327aca29467b31"
 os.environ["OPENAI_API_KEY"] = "sk-TYQdd18bab79e439b0c4248517a66af4827b9746bfadE5Pe"
 
 prompt = ChatPromptTemplate.from_messages(
@@ -59,8 +55,10 @@ prompt = ChatPromptTemplate.from_messages(
             "system",
             "You are very powerful assistant on crypto currencies, but bad at finding latest news, price, etc. "
             "Talk with the user as a financial consultant. "
-            "If they ask you about latest news or price, use search tool."
-            "If they ask you about the sentiment of crypto coin, use sentiment tool.",
+            "If they ask you about latest news of crypto coin or sector, use search tool."
+            "If they ask you about latest price of crypto coin, use price tool."
+            "If they ask you about the sentiment of crypto coin or sector, use sentiment tool."
+            "you can use one tool multiple times during one call.",
         ),
         # Please note the ordering of the fields in the prompt!
         # The correct ordering is:
@@ -76,25 +74,21 @@ prompt = ChatPromptTemplate.from_messages(
     ]
 )
 
-search = GoogleSerperAPIWrapper()
-
-def sentiment_indicator(symbol:str):
-    '''get sentiment score of given symbol'''
-    req_format = "https://www.alphabrain.app/api/getCryptoData?symbol={}&dataType=crypto&fullHistory=true"
-    req = req_format.format(symbol)
-    res = requests.get(url=req).json()["data"][-7:]
-    return json.dumps(res)
-
 tools = [
     Tool(
         name="search",
         func=search.run,
-        description="useful for when you need to ask with search",
+        description="useful for when you need to ask with search, such as latest information of a cryptocoin",
+    ),
+    Tool(
+        name="price",
+        func=current_price,
+        description="get the latest price of a cryptocoin",
     ),
     Tool(
         name="sentiment",
         func=sentiment_indicator,
-        description="get the latest close price and sentiment score of given symbol in past 7 days",
+        description="get the latest close price and sentiment score of given symbol(cryptocoin symbol or sector) in past 7 days",
     )
 ]
 
